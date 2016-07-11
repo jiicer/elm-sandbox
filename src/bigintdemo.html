@@ -1,0 +1,15 @@
+<!DOCTYPE HTML>
+<html><head><meta charset="UTF-8"><title>Main</title><style>html,head,body { padding:0; margin:0; }
+body { font-family: calibri, helvetica, arial, sans-serif; }</style>
+<script src="http://peterolson.github.com/BigInteger.js/BigInteger.min.js"></script>
+<div id="BigIntDemo"></div>
+<script src="BigIntDemo.js"></script>
+<script>
+    var node = document.getElementById('BigIntDemo');
+    var app = Elm.BigIntDemo.embed(node);
+    app.ports.decimal.subscribe(function(decimal) {
+        app.ports.binary.send(bigInt(decimal).toString(2));
+    });
+</script>
+</body>
+</html>
