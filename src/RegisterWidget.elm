@@ -1,6 +1,6 @@
 module RegisterWidget exposing (..)
 
-import Html exposing (Html, div, text, input, h2, h4, a)
+import Html exposing (Html, div, text, input, h2, h4, a, span)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Html.App
@@ -9,13 +9,25 @@ import Html.App
 -- MODEL
 
 
+type alias RegisterField =
+    { name : String
+    , startPos : Int
+    , size : Int
+    }
+
+
 type alias Model =
-    String
+    { name : String
+    , field : RegisterField
+    , editable : Bool
+    }
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( "RegisterWidget", Cmd.none )
+init : String -> ( Model, Cmd Msg )
+init nm =
+    ( Model nm (RegisterField "Field" 0 1) True
+    , Cmd.none
+    )
 
 
 
@@ -23,11 +35,25 @@ init =
 
 
 type Msg
-    = CollapsingText String
+    = ChangeTitle String
+    | EditTitle
+    | ApplyTitle
 
 
 
 -- VIEW
+
+
+titleView : Bool -> String -> List (Html Msg)
+titleView editable title =
+    if editable == True then
+        [ input [ type' "text", onInput ChangeTitle ] []
+        , a [ href "#" ] [ span [ class "glyphicon glyphicon-ok-circle", onClick ApplyTitle ] [] ]
+        ]
+    else
+        [ h4 [ class "panel-title" ] [ a [ attribute "data-toggle" "collapse", href "#collapse1" ] [ text title ] ]
+        , a [ href "#" ] [ span [ class "glyphicon glyphicon-edit", onClick EditTitle ] [] ]
+        ]
 
 
 view : Model -> Html Msg
@@ -37,14 +63,20 @@ view model =
         , div [ class "panel-group" ]
             [ div [ class "panel panel-default" ]
                 [ div [ class "panel-heading" ]
-                    [ h4 [ class "panel-title" ] [ a [ attribute "data-toggle" "collapse", href "#collapse1" ] [ text "Collapsible panel" ] ] ]
-                , div [ id "collapse1", class "panel-collapse collapse" ]
-                    [ div [ class "panel-body" ]
-                        [ input [ type' "text", onInput CollapsingText ] []
-                        , div [ class "panel-body" ] [ text model ]
-                        , div [ class "panel-footer" ] [ text "Panel Footer" ]
+                    (List.append
+                        (titleView
+                            model.editable
+                            model.name
+                        )
+                        [ div [ id "collapse1", class "panel-collapse collapse" ]
+                            [ div [ class "panel-body" ]
+                                [ input [ type' "text", onInput ChangeTitle ] []
+                                , div [ class "panel-body" ] [ text model.field.name ]
+                                , div [ class "panel-footer" ] [ text "Panel Footer" ]
+                                ]
+                            ]
                         ]
-                    ]
+                    )
                 ]
             ]
         ]
@@ -57,8 +89,14 @@ view model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        CollapsingText newText ->
-            ( newText, Cmd.none )
+        ChangeTitle newText ->
+            ( { model | name = newText, field = (RegisterField newText 0 1) }, Cmd.none )
+
+        ApplyTitle ->
+            ( { model | editable = False }, Cmd.none )
+
+        EditTitle ->
+            ( { model | editable = True }, Cmd.none )
 
 
 

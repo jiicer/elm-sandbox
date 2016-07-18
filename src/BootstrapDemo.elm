@@ -4,18 +4,19 @@ import Html exposing (Html, div, text, input, h2, h4, a)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Html.App
+import RegisterWidget
 
 
 -- MODEL
 
 
 type alias Model =
-    String
+    { register : RegisterWidget.Model }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( "Collapsing", Cmd.none )
+    ( { register = fst <| RegisterWidget.init "Register" }, Cmd.none )
 
 
 
@@ -23,7 +24,7 @@ init =
 
 
 type Msg
-    = CollapsingText String
+    = RegisterWidgetMsg RegisterWidget.Msg
 
 
 
@@ -32,21 +33,8 @@ type Msg
 
 view : Model -> Html Msg
 view model =
-    div [ class "container" ]
-        [ h2 [] [ text "Collapsible Panel" ]
-        , div [ class "panel-group" ]
-            [ div [ class "panel panel-default" ]
-                [ div [ class "panel-heading" ]
-                    [ h4 [ class "panel-title" ] [ a [ attribute "data-toggle" "collapse", href "#collapse1" ] [ text "Collapsible panel" ] ] ]
-                , div [ id "collapse1", class "panel-collapse collapse" ]
-                    [ div [ class "panel-body" ]
-                        [ input [ type' "text", onInput CollapsingText ] []
-                        , div [ class "panel-body" ] [ text model ]
-                        , div [ class "panel-footer" ] [ text "Panel Footer" ]
-                        ]
-                    ]
-                ]
-            ]
+    div []
+        [ Html.App.map RegisterWidgetMsg (RegisterWidget.view model.register)
         ]
 
 
@@ -57,8 +45,8 @@ view model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        CollapsingText newText ->
-            ( newText, Cmd.none )
+        RegisterWidgetMsg msg ->
+            ( { model | register = fst <| RegisterWidget.update msg model.register }, Cmd.none )
 
 
 
