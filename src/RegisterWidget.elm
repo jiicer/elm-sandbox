@@ -1,6 +1,6 @@
 module RegisterWidget exposing (..)
 
-import Html exposing (Html, div, text, input, h2, h4, a, span)
+import Html exposing (Html, div, text, input, h2, h4, a, span, table, tbody, thead, th, td, tr)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Html.App
@@ -25,7 +25,7 @@ type alias Model =
 
 init : String -> ( Model, Cmd Msg )
 init nm =
-    ( Model nm (RegisterField "Field" 0 1) True
+    ( Model nm (RegisterField "Field" 0 1) False
     , Cmd.none
     )
 
@@ -44,39 +44,122 @@ type Msg
 -- VIEW
 
 
-titleView : Bool -> String -> List (Html Msg)
-titleView editable title =
+titleView : Bool -> String -> Int -> List (Html Msg)
+titleView editable title collapseId =
     if editable == True then
         [ input [ type' "text", onInput ChangeTitle ] []
         , a [ href "#" ] [ span [ class "glyphicon glyphicon-ok-circle", onClick ApplyTitle ] [] ]
+        , a [ href ("#collapse" ++ (toString collapseId)), attribute "data-toggle" "collapse" ] [ span [ class "glyphicon glyphicon-expand" ] [] ]
         ]
     else
-        [ h4 [ class "panel-title" ] [ a [ attribute "data-toggle" "collapse", href "#collapse1" ] [ text title ] ]
-        , a [ href "#" ] [ span [ class "glyphicon glyphicon-edit", onClick EditTitle ] [] ]
+        [ span [ class "panel-title", onClick EditTitle ] [ text title ]
+        , a [ href ("#collapse" ++ (toString collapseId)), attribute "data-toggle" "collapse" ] [ span [ class "glyphicon glyphicon-expand" ] [] ]
         ]
 
 
 view : Model -> Html Msg
 view model =
     div [ class "container" ]
-        [ h2 [] [ text "Collapsible Panel" ]
-        , div [ class "panel-group" ]
+        [ div [ class "panel-group" ]
             [ div [ class "panel panel-default" ]
                 [ div [ class "panel-heading" ]
-                    (List.append
-                        (titleView
-                            model.editable
-                            model.name
-                        )
-                        [ div [ id "collapse1", class "panel-collapse collapse" ]
-                            [ div [ class "panel-body" ]
-                                [ input [ type' "text", onInput ChangeTitle ] []
-                                , div [ class "panel-body" ] [ text model.field.name ]
-                                , div [ class "panel-footer" ] [ text "Panel Footer" ]
+                    (titleView
+                        model.editable
+                        model.name
+                        1
+                    )
+                ]
+            , div [ id "collapse1", class "panel-collapse collapse" ]
+                [ div [ class "panel-body" ]
+                    [ div [ class "container" ]
+                        [ div [ class "row" ]
+                            [ div [ class "col-md-6" ]
+                                [ table [ class "table table-bordered" ]
+                                    [ thead []
+                                        [ tr []
+                                            [ th []
+                                                [ text "Field" ]
+                                            , th []
+                                                [ text "Acces Type" ]
+                                            , th []
+                                                [ text "Description" ]
+                                            ]
+                                        ]
+                                    , tbody []
+                                        [ tr []
+                                            [ td []
+                                                [ text model.field.name ]
+                                            , td []
+                                                [ text "R/W" ]
+                                            , td []
+                                                [ text "Config me." ]
+                                            ]
+                                        , tr []
+                                            [ td []
+                                                [ text model.field.name ]
+                                            , td []
+                                                [ text "R" ]
+                                            , td []
+                                                [ text "Read the status." ]
+                                            ]
+                                        ]
+                                    ]
                                 ]
                             ]
                         ]
-                    )
+                    ]
+                , div [ class "panel-body" ]
+                    [ div [ class "panel panel-default" ]
+                        [ div [ class "panel-heading" ]
+                            (titleView
+                                model.editable
+                                model.name
+                                2
+                            )
+                        ]
+                    , div [ id "collapse2", class "panel-collapse collapse" ]
+                        [ div [ class "panel-body" ]
+                            [ div [ class "container" ]
+                                [ div [ class "row" ]
+                                    [ div [ class "col-md-6" ]
+                                        [ table [ class "table table-bordered" ]
+                                            [ thead []
+                                                [ tr []
+                                                    [ th []
+                                                        [ text "Field" ]
+                                                    , th []
+                                                        [ text "Acces Type" ]
+                                                    , th []
+                                                        [ text "Description" ]
+                                                    ]
+                                                ]
+                                            , tbody []
+                                                [ tr []
+                                                    [ td []
+                                                        [ text model.field.name ]
+                                                    , td []
+                                                        [ text "R/W" ]
+                                                    , td []
+                                                        [ text "Config me." ]
+                                                    ]
+                                                , tr []
+                                                    [ td []
+                                                        [ text model.field.name ]
+                                                    , td []
+                                                        [ text "R" ]
+                                                    , td []
+                                                        [ text "Read the status." ]
+                                                    ]
+                                                ]
+                                            ]
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        , div [ class "panel-body" ]
+                            [ text "Read the status." ]
+                        ]
+                    ]
                 ]
             ]
         ]
