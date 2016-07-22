@@ -1,6 +1,6 @@
 module RegisterWidget exposing (..)
 
-import Html exposing (Html, div, text, input, h2, h4, a, span, table, tbody, thead, th, td, tr)
+import Html exposing (Html, div, text, input, h2, h4, a, span, table, tbody, thead, th, td, tr, button)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Html.App
@@ -22,16 +22,24 @@ type alias RegisterField =
     }
 
 
+type alias IndexedRegisterField =
+    { id : Int
+    , model : RegisterField
+    }
+
+
 type alias Model =
     { name : String
     , field : RegisterField
+    , fields : List IndexedRegisterField
     , editable : Bool
+    , collapsed : Bool
     }
 
 
 init : String -> ( Model, Cmd Msg )
 init nm =
-    ( Model nm (RegisterField "Config" ReadWrite 0 1) False
+    ( Model nm (RegisterField "Config" ReadWrite 0 1) [] False True
     , Cmd.none
     )
 
@@ -44,22 +52,32 @@ type Msg
     = ChangeTitle String
     | EditTitle
     | ApplyTitle
+    | Collapse
 
 
 
 -- VIEW
 
 
-titleView : Bool -> String -> Int -> List (Html Msg)
-titleView editable title collapseId =
+collapseGlyphicon : Bool -> String
+collapseGlyphicon collapsed =
+    if collapsed == True then
+        "glyphicon-collapse-down"
+    else
+        "glyphicon-collapse-up"
+
+
+titleView : Bool -> Bool -> String -> Int -> List (Html Msg)
+titleView collapsed editable title collapseId =
     if editable == True then
-        [ input [ type' "text", onInput ChangeTitle ] []
-        , a [ href "#" ] [ span [ class "glyphicon glyphicon-ok-circle", onClick ApplyTitle ] [] ]
-        , a [ href ("#collapse" ++ (toString collapseId)), attribute "data-toggle" "collapse" ] [ span [ class "glyphicon glyphicon-expand" ] [] ]
+        [ input [ type' "text", onInput ChangeTitle, onClick ApplyTitle, defaultValue title ] []
+        , button [ class "btn btn-default btn-sm", type' "button", attribute "data-target" ("#collapse" ++ (toString collapseId)), attribute "data-toggle" "collapse", onClick Collapse ]
+            [ span [ class ("pull-right glyphicon " ++ (collapseGlyphicon collapsed)) ] [] ]
         ]
     else
         [ span [ class "panel-title", onClick EditTitle ] [ text title ]
-        , a [ href ("#collapse" ++ (toString collapseId)), attribute "data-toggle" "collapse" ] [ span [ class "glyphicon glyphicon-expand" ] [] ]
+        , button [ class "btn btn-default btn-sm", type' "button", attribute "data-target" ("#collapse" ++ (toString collapseId)), attribute "data-toggle" "collapse", onClick Collapse ]
+            [ span [ class ("pull-right glyphicon " ++ (collapseGlyphicon collapsed)) ] [] ]
         ]
 
 
@@ -86,6 +104,12 @@ viewFieldRow field =
             [ text "R/W" ]
         , td []
             [ text "Config me." ]
+        , td
+            [ style
+                [ ( "width", "1px" )
+                ]
+            ]
+            [ button [ class "btn btn-default btn-sm", type' "button" ] [ span [ class "glyphicon glyphicon-trash" ] [] ] ]
         ]
 
 
@@ -100,7 +124,7 @@ view model =
         [ div [ class "panel-group" ]
             [ div [ class "panel panel-default" ]
                 [ div [ class "panel-heading" ]
-                    (titleView model.editable model.name 1)
+                    (titleView model.collapsed model.editable model.name 1)
                 ]
             , div [ id "collapse1", class "panel-collapse collapse" ]
                 [ div [ class "panel-body" ]
@@ -137,6 +161,9 @@ update msg model =
 
         EditTitle ->
             ( { model | editable = True }, Cmd.none )
+
+        Collapse ->
+            ( { model | collapsed = not model.collapsed }, Cmd.none )
 
 
 
