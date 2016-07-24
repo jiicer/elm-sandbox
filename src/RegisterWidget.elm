@@ -120,21 +120,14 @@ viewFieldHeader =
 
 viewToolButtons : Bool -> List IndexedRegisterField -> Html Msg
 viewToolButtons enabled fields =
-    if enabled == True then
-        td
-            [ style
-                [ ( "width", "100px" )
-                ]
-            ]
-            [ button [ class "btn btn-default btn-sm", type' "button" ] [ span [ class "glyphicon glyphicon-trash" ] [] ] ]
-    else
-        td
-            [ style
-                [ ( "width", "100px" )
-                , ( "visibility", "hidden" )
-                ]
-            ]
-            [ button [ class "btn btn-default btn-sm", type' "button" ] [ span [ class "glyphicon glyphicon-trash" ] [] ] ]
+    let
+        cellAttr =
+            if enabled == True then
+                style [ ( "width", "100px" ) ]
+            else
+                style [ ( "visibility", "hidden" ), ( "width", "100px" ) ]
+    in
+        td [ cellAttr ] [ button [ class "btn btn-default btn-sm", type' "button" ] [ span [ class "glyphicon glyphicon-trash" ] [] ] ]
 
 
 viewFieldRow : RegisterField -> Int -> Html Msg -> Html Msg
