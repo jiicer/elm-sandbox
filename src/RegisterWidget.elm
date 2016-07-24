@@ -111,24 +111,9 @@ viewFieldHeader : Html Msg
 viewFieldHeader =
     thead []
         [ tr []
-            [ th
-                [ style
-                    [ ( "width", "200px" )
-                    ]
-                ]
-                [ text "Field" ]
-            , th
-                [ style
-                    [ ( "width", "200px" )
-                    ]
-                ]
-                [ text "Acces Type" ]
-            , th
-                [ style
-                    [ ( "width", "500px" )
-                    ]
-                ]
-                [ text "Description" ]
+            [ th [] [ text "Field" ]
+            , th [] [ text "Acces Type" ]
+            , th [] [ text "Description" ]
             ]
         ]
 
