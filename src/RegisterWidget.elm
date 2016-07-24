@@ -112,33 +112,23 @@ viewFieldHeader =
     thead []
         [ tr []
             [ th
-                [ tyle
-                    [ ( "width", "1px" )
-                    , ( "display", "none" )
+                [ style
+                    [ ( "width", "200px" )
                     ]
                 ]
                 [ text "Field" ]
             , th
-                [ tyle
-                    [ ( "width", "1px" )
-                    , ( "display", "none" )
+                [ style
+                    [ ( "width", "200px" )
                     ]
                 ]
                 [ text "Acces Type" ]
             , th
-                [ tyle
-                    [ ( "width", "1px" )
-                    , ( "display", "none" )
+                [ style
+                    [ ( "width", "500px" )
                     ]
                 ]
                 [ text "Description" ]
-            , th
-                [ style
-                    [ ( "width", "1px" )
-                    , ( "display", "none" )
-                    ]
-                ]
-                [ emptyHtml ]
             ]
         ]
 
@@ -148,12 +138,18 @@ viewToolButtons enabled fields =
     if enabled == True then
         td
             [ style
-                [ ( "width", "1px" )
+                [ ( "width", "100px" )
                 ]
             ]
             [ button [ class "btn btn-default btn-sm", type' "button" ] [ span [ class "glyphicon glyphicon-trash" ] [] ] ]
     else
-        emptyHtml
+        td
+            [ style
+                [ ( "width", "100px" )
+                , ( "visibility", "hidden" )
+                ]
+            ]
+            [ button [ class "btn btn-default btn-sm", type' "button" ] [ span [ class "glyphicon glyphicon-trash" ] [] ] ]
 
 
 viewFieldRow : RegisterField -> Int -> Html Msg -> Html Msg
@@ -185,7 +181,7 @@ view model =
             , div [ id "collapse1", class "panel-collapse collapse" ]
                 [ div [ class "panel-body" ]
                     [ div [ class "container" ]
-                        [ div [ class "row" ]
+                        [ div [ class "column" ]
                             [ div [ class "col-md-6" ]
                                 [ table [ class "table table-bordered" ]
                                     [ viewFieldHeader
