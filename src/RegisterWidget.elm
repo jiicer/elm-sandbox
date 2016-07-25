@@ -29,6 +29,14 @@ accessTypeToString at =
             "(N/A)"
 
 
+registerFieldBitsToString : Int -> Int -> String
+registerFieldBitsToString startPos size =
+    if size == 1 then
+        toString startPos
+    else
+        toString (startPos + size - 1) ++ ":" ++ (toString startPos)
+
+
 type alias RegisterField =
     { name : String
     , accessType : AccessType
@@ -49,16 +57,15 @@ type alias Model =
     { name : String
     , field : RegisterField
     , fields : List IndexedRegisterField
-    , reservedFields : List IndexedRegisterField
+    , fieldID : List Int
     , editable : Bool
     , collapsed : Bool
-    , toolButtonsTmp : Bool
     }
 
 
 init : String -> ( Model, Cmd Msg )
 init nm =
-    ( Model nm (RegisterField "Config" ReadWrite 0 1 "Configure me.") [] [ { id = 0, model = RegisterField "(Reserved)" Reserved 0 32 "", buttonsEnabled = False } ] False True False
+    ( Model nm (RegisterField "Config" ReadWrite 0 1 "Configure me.") [ { id = 0, model = RegisterField "(Reserved)" Reserved 0 32 "", buttonsEnabled = False } ] [ 1 ] False True
     , Cmd.none
     )
 
@@ -113,6 +120,7 @@ viewFieldHeader =
         [ tr []
             [ th [] [ text "Field" ]
             , th [] [ text "Acces Type" ]
+            , th [] [ text "Bits" ]
             , th [] [ text "Description" ]
             ]
         ]
@@ -127,7 +135,10 @@ viewToolButtons enabled fields =
             else
                 style [ ( "visibility", "hidden" ), ( "width", "100px" ) ]
     in
-        td [ cellAttr ] [ button [ class "btn btn-default btn-sm", type' "button" ] [ span [ class "glyphicon glyphicon-trash" ] [] ] ]
+        td [ cellAttr ]
+            [ button [ class "btn btn-default btn-sm", type' "button" ] [ span [ class "glyphicon glyphicon-trash" ] [] ]
+            , button [ class "btn btn-default btn-sm", type' "button" ] [ span [ class "glyphicon glyphicon-plus" ] [] ]
+            ]
 
 
 viewFieldRow : RegisterField -> Int -> Html Msg -> Html Msg
@@ -137,6 +148,8 @@ viewFieldRow field id buttons =
             [ text field.name ]
         , td []
             [ text (accessTypeToString field.accessType) ]
+        , td []
+            [ text (registerFieldBitsToString field.startPos field.size) ]
         , td []
             [ text field.description ]
         , buttons
@@ -163,8 +176,8 @@ view model =
                             [ div [ class "col-md-6" ]
                                 [ table [ class "table table-bordered" ]
                                     [ viewFieldHeader
-                                    , viewFieldBody [ { id = 0, model = model.field, buttonsEnabled = model.toolButtonsTmp } ]
-                                    , viewFieldBody model.reservedFields
+                                    , viewFieldBody [ { id = 0, model = model.field, buttonsEnabled = False } ]
+                                    , viewFieldBody model.fields
                                     ]
                                 ]
                             ]
@@ -179,6 +192,28 @@ view model =
 
 
 -- UPDATE
+
+
+setToolButtonsForField : List IndexedRegisterField -> Int -> Bool -> List IndexedRegisterField
+setToolButtonsForField indexedFields id value =
+    List.map
+        (\indexedField ->
+            if indexedField.id == id then
+                { indexedField | buttonsEnabled = value }
+            else
+                indexedField
+        )
+        indexedFields
+
+
+enableToolButtonsForField : List IndexedRegisterField -> Int -> List IndexedRegisterField
+enableToolButtonsForField indexedFields id =
+    setToolButtonsForField indexedFields id True
+
+
+disableToolButtonsForField : List IndexedRegisterField -> Int -> List IndexedRegisterField
+disableToolButtonsForField indexedFields id =
+    setToolButtonsForField indexedFields id False
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -197,10 +232,10 @@ update msg model =
             ( { model | collapsed = not model.collapsed }, Cmd.none )
 
         EnableToolButtons id ->
-            ( { model | toolButtonsTmp = True }, Cmd.none )
+            ( { model | fields = enableToolButtonsForField model.fields id }, Cmd.none )
 
         DisableToolButtons id ->
-            ( { model | toolButtonsTmp = False }, Cmd.none )
+            ( { model | fields = disableToolButtonsForField model.fields id }, Cmd.none )
 
 
 
