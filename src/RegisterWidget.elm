@@ -57,7 +57,8 @@ type alias Model =
     { name : String
     , field : RegisterField
     , fields : List IndexedRegisterField
-    , fieldID : List Int
+    , nextId : Int
+    , availableIds : List Int
     , editable : Bool
     , collapsed : Bool
     }
@@ -65,7 +66,7 @@ type alias Model =
 
 init : String -> ( Model, Cmd Msg )
 init nm =
-    ( Model nm (RegisterField "Config" ReadWrite 0 1 "Configure me.") [ { id = 0, model = RegisterField "(Reserved)" Reserved 0 32 "", buttonsEnabled = False } ] [ 1 ] False True
+    ( Model nm (RegisterField "Config" ReadWrite 0 1 "Configure me.") [ { id = 0, model = RegisterField "(Reserved)" Reserved 0 32 "", buttonsEnabled = False } ] 0 [] False True
     , Cmd.none
     )
 
@@ -81,6 +82,7 @@ type Msg
     | Collapse
     | EnableToolButtons Int
     | DisableToolButtons Int
+    | InsertField
 
 
 
@@ -137,7 +139,7 @@ viewToolButtons enabled fields =
     in
         td [ cellAttr ]
             [ button [ class "btn btn-default btn-sm", type' "button" ] [ span [ class "glyphicon glyphicon-trash" ] [] ]
-            , button [ class "btn btn-default btn-sm", type' "button" ] [ span [ class "glyphicon glyphicon-plus" ] [] ]
+            , button [ class "btn btn-default btn-sm", type' "button", onClick InsertField ] [ span [ class "glyphicon glyphicon-plus" ] [] ]
             ]
 
 
@@ -216,6 +218,16 @@ disableToolButtonsForField indexedFields id =
     setToolButtonsForField indexedFields id False
 
 
+insertField : ( List IndexedRegisterField, List Int, Int ) -> ( List IndexedRegisterField, List Int, Int )
+insertField ( fields, usedIds, nextId ) =
+    case List.head usedIds of
+        Just head ->
+            ( fields ++ [ { id = head, model = RegisterField "(New Field)" ReadWrite 0 1 "(Insert Description)", buttonsEnabled = False } ], List.drop 1 usedIds, nextId )
+
+        Nothing ->
+            ( fields ++ [ { id = nextId, model = RegisterField "(New Field)" ReadWrite 0 1 "(Insert Description)", buttonsEnabled = False } ], usedIds, nextId + 1 )
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -236,6 +248,13 @@ update msg model =
 
         DisableToolButtons id ->
             ( { model | fields = disableToolButtonsForField model.fields id }, Cmd.none )
+
+        InsertField ->
+            let
+                ( fields', availableIds', nextId' ) =
+                    insertField ( model.fields, model.availableIds, model.nextId )
+            in
+                ( { model | fields = fields', availableIds = availableIds', nextId = nextId' }, Cmd.none )
 
 
 
