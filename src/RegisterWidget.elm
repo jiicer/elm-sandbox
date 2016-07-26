@@ -83,6 +83,7 @@ type Msg
     | EnableToolButtons Int
     | DisableToolButtons Int
     | InsertField
+    | RemoveField Int
 
 
 
@@ -128,8 +129,8 @@ viewFieldHeader =
         ]
 
 
-viewToolButtons : Bool -> List IndexedRegisterField -> Html Msg
-viewToolButtons enabled fields =
+viewToolButtons : Bool -> Int -> List IndexedRegisterField -> Html Msg
+viewToolButtons enabled id fields =
     let
         cellAttr =
             if enabled == True then
@@ -138,7 +139,7 @@ viewToolButtons enabled fields =
                 style [ ( "visibility", "hidden" ), ( "width", "100px" ) ]
     in
         td [ cellAttr ]
-            [ button [ class "btn btn-default btn-sm", type' "button" ] [ span [ class "glyphicon glyphicon-trash" ] [] ]
+            [ button [ class "btn btn-default btn-sm", type' "button", onClick (RemoveField id) ] [ span [ class "glyphicon glyphicon-trash" ] [] ]
             , button [ class "btn btn-default btn-sm", type' "button", onClick InsertField ] [ span [ class "glyphicon glyphicon-plus" ] [] ]
             ]
 
@@ -160,7 +161,7 @@ viewFieldRow field id buttons =
 
 viewFieldBody : List IndexedRegisterField -> Html Msg
 viewFieldBody fields =
-    tbody [] (List.map (\indexedField -> viewFieldRow indexedField.model indexedField.id (viewToolButtons indexedField.buttonsEnabled fields)) fields)
+    tbody [] (List.map (\indexedField -> viewFieldRow indexedField.model indexedField.id (viewToolButtons indexedField.buttonsEnabled indexedField.id fields)) fields)
 
 
 view : Model -> Html Msg
@@ -228,6 +229,20 @@ insertField ( fields, usedIds, nextId ) =
             ( fields ++ [ { id = nextId, model = RegisterField "(New Field)" ReadWrite 0 1 "(Insert Description)", buttonsEnabled = False } ], usedIds, nextId + 1 )
 
 
+removeField : Int -> List IndexedRegisterField -> List Int -> ( List IndexedRegisterField, List Int )
+removeField id fields availableIds =
+    ( List.filter
+        (\indexedField ->
+            if indexedField.id /= id then
+                True
+            else
+                False
+        )
+        fields
+    , availableIds ++ [ id ]
+    )
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -255,6 +270,13 @@ update msg model =
                     insertField ( model.fields, model.availableIds, model.nextId )
             in
                 ( { model | fields = fields', availableIds = availableIds', nextId = nextId' }, Cmd.none )
+
+        RemoveField id ->
+            let
+                ( fields', availableIds' ) =
+                    removeField id model.fields model.availableIds
+            in
+                ( { model | fields = fields', availableIds = availableIds' }, Cmd.none )
 
 
 
