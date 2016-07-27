@@ -10,6 +10,11 @@ import Html.App
 -- MODEL
 
 
+registerSizeInBits : Int
+registerSizeInBits =
+    32
+
+
 type AccessType
     = ReadWrite
     | ReadOnly
@@ -82,7 +87,7 @@ type Msg
     | Collapse
     | EnableToolButtons Int
     | DisableToolButtons Int
-    | InsertField
+    | InsertField Int
     | RemoveField Int
 
 
@@ -129,19 +134,31 @@ viewFieldHeader =
         ]
 
 
-viewToolButtons : Bool -> Int -> List IndexedRegisterField -> Html Msg
-viewToolButtons enabled id fields =
+viewToolButtons : IndexedRegisterField -> List IndexedRegisterField -> Html Msg
+viewToolButtons field allFields =
     let
         cellAttr =
-            if enabled == True then
+            if field.buttonsEnabled == True then
                 style [ ( "width", "100px" ) ]
             else
                 style [ ( "visibility", "hidden" ), ( "width", "100px" ) ]
+
+        viewInsert =
+            if (field.model.accessType == Reserved) then
+                button [ class "btn btn-default btn-sm", type' "button", onClick (InsertField field.model.startPos) ] [ span [ class "glyphicon glyphicon-plus" ] [] ]
+            else if (field.model.startPos + field.model.size < registerSizeInBits) then
+                button [ class "btn btn-default btn-sm", type' "button", onClick (InsertField (field.model.startPos + field.model.size)) ] [ span [ class "glyphicon glyphicon-plus" ] [] ]
+            else
+                emptyHtml
+
+        viewRemove =
+            if (field.model.accessType /= Reserved) then
+                button [ class "btn btn-default btn-sm", type' "button", onClick (RemoveField field.id) ] [ span [ class "glyphicon glyphicon-trash" ] [] ]
+            else
+                emptyHtml
     in
         td [ cellAttr ]
-            [ button [ class "btn btn-default btn-sm", type' "button", onClick (RemoveField id) ] [ span [ class "glyphicon glyphicon-trash" ] [] ]
-            , button [ class "btn btn-default btn-sm", type' "button", onClick InsertField ] [ span [ class "glyphicon glyphicon-plus" ] [] ]
-            ]
+            [ viewRemove, viewInsert ]
 
 
 viewFieldRow : RegisterField -> Int -> Html Msg -> Html Msg
@@ -161,7 +178,7 @@ viewFieldRow field id buttons =
 
 viewFieldBody : List IndexedRegisterField -> Html Msg
 viewFieldBody fields =
-    tbody [] (List.map (\indexedField -> viewFieldRow indexedField.model indexedField.id (viewToolButtons indexedField.buttonsEnabled indexedField.id fields)) fields)
+    tbody [] (List.map (\indexedField -> viewFieldRow indexedField.model indexedField.id (viewToolButtons indexedField fields)) fields)
 
 
 view : Model -> Html Msg
@@ -219,14 +236,63 @@ disableToolButtonsForField indexedFields id =
     setToolButtonsForField indexedFields id False
 
 
-insertField : ( List IndexedRegisterField, List Int, Int ) -> ( List IndexedRegisterField, List Int, Int )
-insertField ( fields, usedIds, nextId ) =
+fieldPrototype : Int -> RegisterField
+fieldPrototype startPos =
+    RegisterField "(New Field)" ReadWrite startPos 1 "(Insert Description)"
+
+
+startPosSomparison a b =
+    compare a.model.startPos b.model.startPos
+
+
+resizeFieldFromLsb : RegisterField -> Int -> RegisterField
+resizeFieldFromLsb field reduction =
+    { field
+        | startPos = field.startPos + reduction
+        , size = field.size - reduction
+    }
+
+
+reduceOverlappingField : List IndexedRegisterField -> RegisterField -> List IndexedRegisterField
+reduceOverlappingField indexedFields newField =
+    List.map
+        (\indexedField ->
+            if (List.member newField.startPos [indexedField.model.startPos..indexedField.model.startPos + indexedField.model.size - 1]) == True then
+                { indexedField | model = resizeFieldFromLsb indexedField.model newField.size }
+            else
+                indexedField
+        )
+        indexedFields
+
+
+insertField : RegisterField -> List IndexedRegisterField -> List Int -> Int -> ( List IndexedRegisterField, List Int, Int )
+insertField newField fields usedIds nextId =
     case List.head usedIds of
         Just head ->
-            ( fields ++ [ { id = head, model = RegisterField "(New Field)" ReadWrite 0 1 "(Insert Description)", buttonsEnabled = False } ], List.drop 1 usedIds, nextId )
+            let
+                newIndexedField =
+                    { id = head, model = newField, buttonsEnabled = False }
+
+                fields' =
+                    reduceOverlappingField fields newField
+
+                fields'' =
+                    fields' ++ [ newIndexedField ] |> List.sortWith startPosSomparison
+            in
+                ( fields'', List.drop 1 usedIds, nextId )
 
         Nothing ->
-            ( fields ++ [ { id = nextId, model = RegisterField "(New Field)" ReadWrite 0 1 "(Insert Description)", buttonsEnabled = False } ], usedIds, nextId + 1 )
+            let
+                newIndexedField =
+                    { id = nextId, model = newField, buttonsEnabled = False }
+
+                fields' =
+                    reduceOverlappingField fields newField
+
+                fields'' =
+                    fields' ++ [ newIndexedField ] |> List.sortWith startPosSomparison
+            in
+                ( fields'', usedIds, nextId + 1 )
 
 
 removeField : Int -> List IndexedRegisterField -> List Int -> ( List IndexedRegisterField, List Int )
@@ -264,10 +330,10 @@ update msg model =
         DisableToolButtons id ->
             ( { model | fields = disableToolButtonsForField model.fields id }, Cmd.none )
 
-        InsertField ->
+        InsertField startPos ->
             let
                 ( fields', availableIds', nextId' ) =
-                    insertField ( model.fields, model.availableIds, model.nextId )
+                    insertField (fieldPrototype startPos) model.fields model.availableIds model.nextId
             in
                 ( { model | fields = fields', availableIds = availableIds', nextId = nextId' }, Cmd.none )
 
