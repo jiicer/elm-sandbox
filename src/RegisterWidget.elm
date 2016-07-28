@@ -59,7 +59,6 @@ type alias IndexedRegisterField =
 
 type alias Model =
     { name : String
-    , field : RegisterField
     , fields : List IndexedRegisterField
     , editable : Bool
     , collapsed : Bool
@@ -68,7 +67,7 @@ type alias Model =
 
 init : String -> ( Model, Cmd Msg )
 init nm =
-    ( Model nm (RegisterField "Config" ReadWrite 0 1 "Configure me.") [ { model = RegisterField "(Reserved)" Reserved 0 32 "", buttonsEnabled = False } ] False True
+    ( Model nm [ { model = RegisterField "(Reserved)" Reserved 0 32 "", buttonsEnabled = False } ] False True
     , Cmd.none
     )
 
@@ -143,8 +142,6 @@ viewToolButtons field allFields =
         viewInsert =
             if (field.model.accessType == Reserved) then
                 button [ class "btn btn-default btn-sm", type' "button", onClick (InsertField field.model.startPos) ] [ span [ class "glyphicon glyphicon-plus" ] [] ]
-            else if (field.model.startPos + field.model.size < registerSizeInBits) then
-                button [ class "btn btn-default btn-sm", type' "button", onClick (InsertField (field.model.startPos + field.model.size)) ] [ span [ class "glyphicon glyphicon-plus" ] [] ]
             else
                 emptyHtml
 
@@ -193,7 +190,6 @@ view model =
                             [ div [ class "col-md-6" ]
                                 [ table [ class "table table-bordered" ]
                                     [ viewFieldHeader
-                                    , viewFieldBody [ { model = model.field, buttonsEnabled = False } ]
                                     , viewFieldBody model.fields
                                     ]
                                 ]
@@ -256,26 +252,22 @@ filterReserved fields =
 
 buildGaps : Int -> List IndexedRegisterField -> List { startPos : Int, size : Int } -> List { startPos : Int, size : Int }
 buildGaps expected fields result =
-    case ((List.sortWith startPosSomparison fields) |> List.head) of
-        Just field ->
-            if (field.model.startPos > expected) then
-                let
-                    tmp =
-                        Debug.log "(startPos, expected)" ( field.model.startPos, expected )
-                in
-                    buildGaps (field.model.startPos + field.model.size) (List.drop 1 fields) ({ startPos = expected, size = (field.model.startPos - expected) } :: result)
-            else
-                let
-                    tmp =
-                        Debug.log "startPos" field.model.startPos
-                in
-                    buildGaps (field.model.startPos + field.model.size) (List.drop 1 fields) result
+    let
+        fieldsSorted =
+            List.sortWith startPosSomparison fields
+    in
+        case List.head fieldsSorted of
+            Just field ->
+                if (field.model.startPos > expected) then
+                    buildGaps (field.model.startPos + field.model.size) (List.drop 1 fieldsSorted) ({ startPos = expected, size = (field.model.startPos - expected) } :: result)
+                else
+                    buildGaps (field.model.startPos + field.model.size) (List.drop 1 fieldsSorted) result
 
-        Nothing ->
-            if (expected /= registerSizeInBits) then
-                { startPos = expected, size = (registerSizeInBits - expected) } :: result
-            else
-                result
+            Nothing ->
+                if (expected /= registerSizeInBits) then
+                    { startPos = expected, size = (registerSizeInBits - expected) } :: result
+                else
+                    result
 
 
 fillGaps : List { startPos : Int, size : Int } -> List IndexedRegisterField -> List IndexedRegisterField
@@ -283,11 +275,8 @@ fillGaps gaps fields =
     case List.head gaps of
         Just gap ->
             let
-                tmp =
-                    Debug.log "gaps" gaps
-
                 fields' =
-                    insertField (RegisterField ("(Reserved fill)" ++ toString (List.length gaps)) Reserved gap.startPos gap.size "") fields
+                    insertField (RegisterField "(Reserved)" Reserved gap.startPos gap.size "") fields
             in
                 fillGaps (List.drop 1 gaps) fields'
 
@@ -338,25 +327,16 @@ update msg model =
                 newAdded =
                     insertField (fieldPrototype startPos) model.fields
 
-                tmp =
-                    Debug.log "num of fields " (List.length newAdded)
-
                 reservedRemoved =
-                    filterReserved newAdded |> List.sortWith startPosSomparison
-
-                tmp' =
-                    Debug.log "num of fields " (List.length reservedRemoved)
+                    filterReserved newAdded
 
                 reservedUpdated =
                     fillGaps (buildGaps 0 reservedRemoved []) reservedRemoved
 
-                tmp'' =
-                    Debug.log "num of fields " (List.length reservedUpdated)
-
-                fields'''' =
+                sorted =
                     List.sortWith startPosSomparison reservedUpdated |> List.reverse
             in
-                ( { model | fields = fields'''' }, Cmd.none )
+                ( { model | fields = sorted }, Cmd.none )
 
         RemoveField startPos ->
             let
@@ -364,7 +344,7 @@ update msg model =
                     removeField startPos model.fields
 
                 fields'' =
-                    filterReserved fields' |> List.sortWith startPosSomparison
+                    filterReserved fields'
 
                 fields''' =
                     fillGaps (buildGaps 0 fields'' []) fields''
