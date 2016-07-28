@@ -239,37 +239,37 @@ fieldPrototype startPos =
 
 
 startPosSomparison a b =
-    compare b.model.startPos a.model.startPos
-
-
-resizeFieldFromLsb : RegisterField -> Int -> RegisterField
-resizeFieldFromLsb field reduction =
-    { field
-        | startPos = field.startPos + reduction
-        , size = field.size - reduction
-    }
+    compare a.model.startPos b.model.startPos
 
 
 filterReserved : List IndexedRegisterField -> List IndexedRegisterField
 filterReserved fields =
-    List.filterMap
+    List.filter
         (\field ->
             if field.model.accessType /= Reserved then
-                Just field
+                True
             else
-                Nothing
+                False
         )
         fields
 
 
 buildGaps : Int -> List IndexedRegisterField -> List { startPos : Int, size : Int } -> List { startPos : Int, size : Int }
 buildGaps expected fields result =
-    case List.head fields of
+    case ((List.sortWith startPosSomparison fields) |> List.head) of
         Just field ->
             if (field.model.startPos > expected) then
-                buildGaps (field.model.startPos + field.model.size) (List.drop 1 fields) ({ startPos = expected, size = (field.model.startPos - expected) } :: result)
+                let
+                    tmp =
+                        Debug.log "(startPos, expected)" ( field.model.startPos, expected )
+                in
+                    buildGaps (field.model.startPos + field.model.size) (List.drop 1 fields) ({ startPos = expected, size = (field.model.startPos - expected) } :: result)
             else
-                buildGaps (field.model.startPos + field.model.size) (List.drop 1 fields) result
+                let
+                    tmp =
+                        Debug.log "startPos" field.model.startPos
+                in
+                    buildGaps (field.model.startPos + field.model.size) (List.drop 1 fields) result
 
         Nothing ->
             if (expected /= registerSizeInBits) then
@@ -283,8 +283,11 @@ fillGaps gaps fields =
     case List.head gaps of
         Just gap ->
             let
+                tmp =
+                    Debug.log "gaps" gaps
+
                 fields' =
-                    insertField (RegisterField "(Reserved)" Reserved gap.startPos gap.size "") fields
+                    insertField (RegisterField ("(Reserved fill)" ++ toString (List.length gaps)) Reserved gap.startPos gap.size "") fields
             in
                 fillGaps (List.drop 1 gaps) fields'
 
@@ -332,25 +335,44 @@ update msg model =
 
         InsertField startPos ->
             let
-                fields' =
+                newAdded =
                     insertField (fieldPrototype startPos) model.fields
 
-                fields'' =
-                    filterReserved fields'
+                tmp =
+                    Debug.log "num of fields " (List.length newAdded)
 
-                fields''' =
-                    List.sortWith startPosSomparison fields''
+                reservedRemoved =
+                    filterReserved newAdded |> List.sortWith startPosSomparison
+
+                tmp' =
+                    Debug.log "num of fields " (List.length reservedRemoved)
+
+                reservedUpdated =
+                    fillGaps (buildGaps 0 reservedRemoved []) reservedRemoved
+
+                tmp'' =
+                    Debug.log "num of fields " (List.length reservedUpdated)
 
                 fields'''' =
-                    fillGaps (buildGaps 0 fields'' []) fields'''
-
-                fields''''' =
-                    List.sortWith startPosSomparison fields''''
+                    List.sortWith startPosSomparison reservedUpdated |> List.reverse
             in
-                ( { model | fields = fields''''' }, Cmd.none )
+                ( { model | fields = fields'''' }, Cmd.none )
 
         RemoveField startPos ->
-            ( { model | fields = (removeField startPos model.fields) }, Cmd.none )
+            let
+                fields' =
+                    removeField startPos model.fields
+
+                fields'' =
+                    filterReserved fields' |> List.sortWith startPosSomparison
+
+                fields''' =
+                    fillGaps (buildGaps 0 fields'' []) fields''
+
+                fields'''' =
+                    List.sortWith startPosSomparison fields''' |> List.reverse
+            in
+                ( { model | fields = fields'''' }, Cmd.none )
 
 
 
