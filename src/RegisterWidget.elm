@@ -54,6 +54,7 @@ type alias RegisterField =
 type alias IndexedRegisterField =
     { model : RegisterField
     , buttonsEnabled : Bool
+    , positionAndSizeEditable : Bool
     }
 
 
@@ -67,7 +68,7 @@ type alias Model =
 
 init : String -> ( Model, Cmd Msg )
 init nm =
-    ( Model nm [ { model = RegisterField "(Reserved)" Reserved 0 32 "", buttonsEnabled = False } ] False True
+    ( Model nm [ { model = RegisterField "(Reserved)" Reserved 0 32 "", buttonsEnabled = False, positionAndSizeEditable = False } ] False True
     , Cmd.none
     )
 
@@ -85,6 +86,7 @@ type Msg
     | DisableToolButtons Int
     | InsertField Int
     | RemoveField Int
+    | EditPositionAndSize Int
 
 
 
@@ -162,7 +164,7 @@ viewFieldRow field buttons =
             [ text field.name ]
         , td []
             [ text (accessTypeToString field.accessType) ]
-        , td []
+        , td [ onClick (EditPositionAndSize field.startPos) ]
             [ text (registerFieldBitsToString field.startPos field.size) ]
         , td []
             [ text field.description ]
@@ -213,6 +215,18 @@ setToolButtonsForField indexedFields startPos value =
         (\indexedField ->
             if indexedField.model.startPos == startPos then
                 { indexedField | buttonsEnabled = value }
+            else
+                indexedField
+        )
+        indexedFields
+
+
+setPositionAndSizeEditingForField : List IndexedRegisterField -> Int -> Bool -> List IndexedRegisterField
+setPositionAndSizeEditingForField indexedFields startPos value =
+    List.map
+        (\indexedField ->
+            if indexedField.model.startPos == startPos then
+                { indexedField | positionAndSizeEditable = value }
             else
                 indexedField
         )
@@ -286,7 +300,7 @@ fillGaps gaps fields =
 
 insertField : RegisterField -> List IndexedRegisterField -> List IndexedRegisterField
 insertField newField fields =
-    fields ++ [ { model = newField, buttonsEnabled = False } ]
+    fields ++ [ { model = newField, buttonsEnabled = False, positionAndSizeEditable = False } ]
 
 
 removeField : Int -> List IndexedRegisterField -> List IndexedRegisterField
@@ -353,6 +367,9 @@ update msg model =
                     List.sortWith startPosSomparison fields''' |> List.reverse
             in
                 ( { model | fields = fields'''' }, Cmd.none )
+
+        EditPositionAndSize startPos ->
+            ( { model | fields = setPositionAndSizeEditingForField model.fields startPos True }, Cmd.none )
 
 
 
