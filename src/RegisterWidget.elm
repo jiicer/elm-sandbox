@@ -157,6 +157,12 @@ viewToolButtons field allFields =
             [ viewRemove, viewInsert ]
 
 
+viewStartPosAndSize : RegisterField -> Bool -> Html Msg
+viewStartPosAndSize field editable =
+    td [ onClick (EditPositionAndSize field.startPos) ]
+        [ text (registerFieldBitsToString field.startPos field.size) ]
+
+
 viewFieldRow : RegisterField -> Html Msg -> Html Msg
 viewFieldRow field buttons =
     tr [ onMouseEnter (EnableToolButtons field.startPos), onMouseLeave (DisableToolButtons field.startPos) ]
@@ -164,8 +170,7 @@ viewFieldRow field buttons =
             [ text field.name ]
         , td []
             [ text (accessTypeToString field.accessType) ]
-        , td [ onClick (EditPositionAndSize field.startPos) ]
-            [ text (registerFieldBitsToString field.startPos field.size) ]
+        , viewStartPosAndSize field False
         , td []
             [ text field.description ]
         , buttons
