@@ -157,29 +157,29 @@ viewToolButtons field allFields =
             [ viewRemove, viewInsert ]
 
 
-viewStartPosAndSize : RegisterField -> Bool -> Html Msg
-viewStartPosAndSize field editable =
-    td [ onClick (EditPositionAndSize field.startPos) ]
-        [ text (registerFieldBitsToString field.startPos field.size) ]
+viewStartPosAndSize : IndexedRegisterField -> Html Msg
+viewStartPosAndSize field =
+    td [ onClick (EditPositionAndSize field.model.startPos) ]
+        [ text (registerFieldBitsToString field.model.startPos field.model.size) ]
 
 
-viewFieldRow : RegisterField -> Html Msg -> Html Msg
+viewFieldRow : IndexedRegisterField -> Html Msg -> Html Msg
 viewFieldRow field buttons =
-    tr [ onMouseEnter (EnableToolButtons field.startPos), onMouseLeave (DisableToolButtons field.startPos) ]
+    tr [ onMouseEnter (EnableToolButtons field.model.startPos), onMouseLeave (DisableToolButtons field.model.startPos) ]
         [ td []
-            [ text field.name ]
+            [ text field.model.name ]
         , td []
-            [ text (accessTypeToString field.accessType) ]
-        , viewStartPosAndSize field False
+            [ text (accessTypeToString field.model.accessType) ]
+        , viewStartPosAndSize field
         , td []
-            [ text field.description ]
+            [ text field.model.description ]
         , buttons
         ]
 
 
 viewFieldBody : List IndexedRegisterField -> Html Msg
 viewFieldBody fields =
-    tbody [] (List.map (\indexedField -> viewFieldRow indexedField.model (viewToolButtons indexedField fields)) fields)
+    tbody [] (List.map (\indexedField -> viewFieldRow indexedField (viewToolButtons indexedField fields)) fields)
 
 
 view : Model -> Html Msg
