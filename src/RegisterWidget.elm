@@ -5,6 +5,7 @@ import Html exposing (Html, div, text, input, h2, h4, a, span, table, tbody, the
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Html.App
+import String exposing (toInt)
 
 
 -- MODEL
@@ -54,7 +55,6 @@ type alias RegisterField =
 type alias IndexedRegisterField =
     { model : RegisterField
     , buttonsEnabled : Bool
-    , positionAndSizeEditable : Bool
     }
 
 
@@ -68,7 +68,7 @@ type alias Model =
 
 init : String -> ( Model, Cmd Msg )
 init nm =
-    ( Model nm [ { model = RegisterField "(Reserved)" Reserved 0 32 "", buttonsEnabled = False, positionAndSizeEditable = False } ] False True
+    ( Model nm [ { model = RegisterField "(Reserved)" Reserved 0 32 "", buttonsEnabled = False } ] False True
     , Cmd.none
     )
 
@@ -86,7 +86,7 @@ type Msg
     | DisableToolButtons Int
     | InsertField Int
     | RemoveField Int
-    | EditPositionAndSize Int
+    | EditSize Int String
 
 
 
@@ -155,7 +155,7 @@ viewToolButtons field allFields =
 
         viewSizeSlider =
             if (field.model.accessType /= Reserved) then
-                input [ type' "range", style [ ( "width", "100px" ) ], class "form-control" ] []
+                input [ type' "range", style [ ( "width", "100px" ) ], class "form-control", onInput (EditSize field.model.startPos) ] []
             else
                 emptyHtml
     in
@@ -163,24 +163,15 @@ viewToolButtons field allFields =
             [ div [ class "input-group" ] [ viewRemove, viewInsert, viewSizeSlider ] ]
 
 
-viewStartPosAndSize : IndexedRegisterField -> Html Msg
-viewStartPosAndSize field =
-    if field.positionAndSizeEditable == True then
-        td [ onClick (EditPositionAndSize field.model.startPos) ]
-            [ text (registerFieldBitsToString field.model.startPos field.model.size) ]
-    else
-        td [ onClick (EditPositionAndSize field.model.startPos) ]
-            [ text (registerFieldBitsToString field.model.startPos field.model.size) ]
-
-
-viewFieldRow : IndexedRegisterField -> Html Msg -> Html Msg -> Html Msg
-viewFieldRow field startPosAndSize buttons =
+viewFieldRow : IndexedRegisterField -> Html Msg -> Html Msg
+viewFieldRow field buttons =
     tr [ onMouseEnter (EnableToolButtons field.model.startPos), onMouseLeave (DisableToolButtons field.model.startPos) ]
         [ td []
             [ text field.model.name ]
         , td []
             [ text (accessTypeToString field.model.accessType) ]
-        , startPosAndSize
+        , td []
+            [ text (registerFieldBitsToString field.model.startPos field.model.size) ]
         , td []
             [ text field.model.description ]
         , buttons
@@ -189,7 +180,7 @@ viewFieldRow field startPosAndSize buttons =
 
 viewFieldBody : List IndexedRegisterField -> Html Msg
 viewFieldBody fields =
-    tbody [] (List.map (\indexedField -> viewFieldRow indexedField (viewStartPosAndSize indexedField) (viewToolButtons indexedField fields)) fields)
+    tbody [] (List.map (\indexedField -> viewFieldRow indexedField (viewToolButtons indexedField fields)) fields)
 
 
 view : Model -> Html Msg
@@ -238,7 +229,7 @@ setFieldSize indexedFields startPos newSize =
                             model'' =
                                 { model' | size = newSize }
                         in
-                            { indexedField | model = model' }
+                            { indexedField | model = model'' }
                     else
                         indexedField
                 )
@@ -259,18 +250,6 @@ setToolButtonsForField indexedFields startPos value =
         (\indexedField ->
             if indexedField.model.startPos == startPos then
                 { indexedField | buttonsEnabled = value }
-            else
-                indexedField
-        )
-        indexedFields
-
-
-setPositionAndSizeEditingForField : List IndexedRegisterField -> Int -> Bool -> List IndexedRegisterField
-setPositionAndSizeEditingForField indexedFields startPos value =
-    List.map
-        (\indexedField ->
-            if indexedField.model.startPos == startPos then
-                { indexedField | positionAndSizeEditable = value }
             else
                 indexedField
         )
@@ -344,7 +323,7 @@ fillGaps gaps fields =
 
 insertField : RegisterField -> List IndexedRegisterField -> List IndexedRegisterField
 insertField newField fields =
-    fields ++ [ { model = newField, buttonsEnabled = False, positionAndSizeEditable = False } ]
+    fields ++ [ { model = newField, buttonsEnabled = False } ]
 
 
 removeField : Int -> List IndexedRegisterField -> List IndexedRegisterField
@@ -412,8 +391,8 @@ update msg model =
             in
                 ( { model | fields = fields'''' }, Cmd.none )
 
-        EditPositionAndSize startPos ->
-            ( { model | fields = setPositionAndSizeEditingForField model.fields startPos True }, Cmd.none )
+        EditSize startPos newSize ->
+            ( { model | fields = setFieldSize model.fields startPos (String.toInt (Debug.log "" newSize) |> Result.withDefault 0) }, Cmd.none )
 
 
 
