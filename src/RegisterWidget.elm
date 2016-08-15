@@ -224,6 +224,35 @@ view model =
 -- UPDATE
 
 
+setFieldSize : List IndexedRegisterField -> Int -> Int -> List IndexedRegisterField
+setFieldSize indexedFields startPos newSize =
+    let
+        sizeUpdated =
+            List.map
+                (\indexedField ->
+                    if indexedField.model.startPos == startPos then
+                        let
+                            model' =
+                                indexedField.model
+
+                            model'' =
+                                { model' | size = newSize }
+                        in
+                            { indexedField | model = model' }
+                    else
+                        indexedField
+                )
+                indexedFields
+
+        reservedRemoved =
+            filterReserved sizeUpdated
+
+        reservedUpdated =
+            fillGaps (buildGaps 0 reservedRemoved []) reservedRemoved
+    in
+        List.sortWith startPosSomparison reservedUpdated |> List.reverse
+
+
 setToolButtonsForField : List IndexedRegisterField -> Int -> Bool -> List IndexedRegisterField
 setToolButtonsForField indexedFields startPos value =
     List.map
