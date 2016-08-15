@@ -1,7 +1,7 @@
 module RegisterWidget exposing (..)
 
 import Array exposing (..)
-import Html exposing (Html, div, text, input, h2, h4, a, span, table, tbody, thead, th, td, tr, button)
+import Html exposing (Html, div, text, input, h2, h4, a, span, table, tbody, thead, th, td, tr, button, form)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Html.App
@@ -137,40 +137,50 @@ viewToolButtons field allFields =
     let
         cellAttr =
             if field.buttonsEnabled == True then
-                style [ ( "width", "100px" ) ]
+                [ style [ ( "width", "200px" ) ] ]
             else
-                style [ ( "visibility", "hidden" ), ( "width", "100px" ) ]
+                [ style [ ( "visibility", "hidden" ), ( "width", "200px" ) ] ]
 
         viewInsert =
             if (field.model.accessType == Reserved) then
-                button [ class "btn btn-default btn-sm", type' "button", onClick (InsertField field.model.startPos) ] [ span [ class "glyphicon glyphicon-plus" ] [] ]
+                span [ class "input-grp-btn" ] [ button [ class "btn btn-default btn-sm", type' "button", onClick (InsertField field.model.startPos) ] [ span [ class "glyphicon glyphicon-plus" ] [] ] ]
             else
                 emptyHtml
 
         viewRemove =
             if (field.model.accessType /= Reserved) then
-                button [ class "btn btn-default btn-sm", type' "button", onClick (RemoveField field.model.startPos) ] [ span [ class "glyphicon glyphicon-trash" ] [] ]
+                span [ class "input-grp-btn" ] [ button [ class "btn btn-default btn-sm", type' "button", onClick (RemoveField field.model.startPos) ] [ span [ class "glyphicon glyphicon-trash" ] [] ] ]
+            else
+                emptyHtml
+
+        viewSizeSlider =
+            if (field.model.accessType /= Reserved) then
+                input [ type' "range", style [ ( "width", "100px" ) ], class "form-control" ] []
             else
                 emptyHtml
     in
-        td [ cellAttr ]
-            [ viewRemove, viewInsert ]
+        td cellAttr
+            [ div [ class "input-group" ] [ viewRemove, viewInsert, viewSizeSlider ] ]
 
 
 viewStartPosAndSize : IndexedRegisterField -> Html Msg
 viewStartPosAndSize field =
-    td [ onClick (EditPositionAndSize field.model.startPos) ]
-        [ text (registerFieldBitsToString field.model.startPos field.model.size) ]
+    if field.positionAndSizeEditable == True then
+        td [ onClick (EditPositionAndSize field.model.startPos) ]
+            [ text (registerFieldBitsToString field.model.startPos field.model.size) ]
+    else
+        td [ onClick (EditPositionAndSize field.model.startPos) ]
+            [ text (registerFieldBitsToString field.model.startPos field.model.size) ]
 
 
-viewFieldRow : IndexedRegisterField -> Html Msg -> Html Msg
-viewFieldRow field buttons =
+viewFieldRow : IndexedRegisterField -> Html Msg -> Html Msg -> Html Msg
+viewFieldRow field startPosAndSize buttons =
     tr [ onMouseEnter (EnableToolButtons field.model.startPos), onMouseLeave (DisableToolButtons field.model.startPos) ]
         [ td []
             [ text field.model.name ]
         , td []
             [ text (accessTypeToString field.model.accessType) ]
-        , viewStartPosAndSize field
+        , startPosAndSize
         , td []
             [ text field.model.description ]
         , buttons
@@ -179,7 +189,7 @@ viewFieldRow field buttons =
 
 viewFieldBody : List IndexedRegisterField -> Html Msg
 viewFieldBody fields =
-    tbody [] (List.map (\indexedField -> viewFieldRow indexedField (viewToolButtons indexedField fields)) fields)
+    tbody [] (List.map (\indexedField -> viewFieldRow indexedField (viewStartPosAndSize indexedField) (viewToolButtons indexedField fields)) fields)
 
 
 view : Model -> Html Msg
@@ -194,7 +204,7 @@ view model =
                 [ div [ class "panel-body" ]
                     [ div [ class "container" ]
                         [ div [ class "column" ]
-                            [ div [ class "col-md-6" ]
+                            [ div [ class "col-md-9" ]
                                 [ table [ class "table table-bordered" ]
                                     [ viewFieldHeader
                                     , viewFieldBody model.fields
