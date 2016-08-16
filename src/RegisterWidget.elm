@@ -130,6 +130,22 @@ viewFieldHeader =
         ]
 
 
+leadingReservedSpace : List IndexedRegisterField -> Int -> Int
+leadingReservedSpace fields startPos =
+    case List.head fields of
+        Just field ->
+            if (field.model.startPos == startPos) then
+                if (field.model.accessType == Reserved) then
+                    field.model.size
+                else
+                    0
+            else
+                leadingReservedSpace (List.drop 1 fields) startPos
+
+        Nothing ->
+            0
+
+
 viewToolButtons : IndexedRegisterField -> List IndexedRegisterField -> Html Msg
 viewToolButtons field allFields =
     let
@@ -153,16 +169,26 @@ viewToolButtons field allFields =
 
         viewSizeSlider =
             if (field.model.accessType /= Reserved) then
-                input
-                    [ style [ ( "width", "100px" ) ]
-                    , class "form-control"
-                    , type' "range"
-                    , value (toString <| field.model.size)
-                    , Html.Attributes.min "1"
-                    , Html.Attributes.max "32"
-                    , onInput (EditSize field.model.startPos)
-                    ]
-                    []
+                let
+                    min' =
+                        1
+
+                    max' =
+                        field.model.size + (leadingReservedSpace allFields (field.model.startPos + field.model.size))
+                in
+                    if (max' > min') then
+                        input
+                            [ style [ ( "width", "100px" ) ]
+                            , class "form-control"
+                            , type' "range"
+                            , value (toString field.model.size)
+                            , Html.Attributes.min (toString min')
+                            , Html.Attributes.max (toString max')
+                            , onInput (EditSize field.model.startPos)
+                            ]
+                            []
+                    else
+                        emptyHtml
             else
                 emptyHtml
     in
