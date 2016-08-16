@@ -1,10 +1,8 @@
 module RegisterWidget exposing (..)
 
-import Array exposing (..)
 import Html exposing (Html, div, text, input, h2, h4, a, span, table, tbody, thead, th, td, tr, button, form)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Html.App
 import String exposing (toInt)
 
 
@@ -155,7 +153,16 @@ viewToolButtons field allFields =
 
         viewSizeSlider =
             if (field.model.accessType /= Reserved) then
-                input [ type' "range", style [ ( "width", "100px" ) ], class "form-control", onInput (EditSize field.model.startPos) ] []
+                input
+                    [ style [ ( "width", "100px" ) ]
+                    , class "form-control"
+                    , type' "range"
+                    , value (toString <| field.model.size)
+                    , Html.Attributes.min "1"
+                    , Html.Attributes.max "32"
+                    , onInput (EditSize field.model.startPos)
+                    ]
+                    []
             else
                 emptyHtml
     in
