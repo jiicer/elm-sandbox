@@ -4,6 +4,8 @@ import Html exposing (Html, div, text, input, h2, h4, a)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import RegisterWidget
+import Bootstrap.CDN as CDN
+import Bootstrap.Grid as Grid
 
 
 -- MODEL

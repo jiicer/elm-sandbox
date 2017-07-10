@@ -1,6 +1,6 @@
 module RegisterWidget exposing (..)
 
-import Html exposing (Html, div, text, input, h2, h4, a, span, table, tbody, thead, th, td, tr, button, form)
+import Html exposing (Html, div, text, input, h2, h4, a, span, table, tbody, thead, th, td, tr, button, form, i)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import String exposing (toInt)
@@ -99,22 +99,22 @@ emptyHtml =
 collapseGlyphicon : Bool -> String
 collapseGlyphicon collapsed =
     if collapsed == True then
-        "glyphicon-collapse-down"
+        "fa fa-caret-square-o-down"
     else
-        "glyphicon-collapse-up"
+        "fa fa-caret-square-o-up"
 
 
 titleView : Bool -> Bool -> String -> Int -> List (Html Msg)
 titleView collapsed editable title collapseId =
     if editable == True then
         [ input [ type_ "text", onInput ChangeTitle, onClick ApplyTitle, defaultValue title ] []
-        , button [ class "btn btn-default btn-sm", type_ "button", attribute "data-target" ("#collapse" ++ (toString collapseId)), attribute "data-toggle" "collapse", onClick Collapse ]
-            [ span [ class ("pull-right glyphicon " ++ (collapseGlyphicon collapsed)) ] [] ]
+        , button [ class "btn btn-secondary btn-sm", type_ "button", attribute "data-target" ("#collapse" ++ (toString collapseId)), attribute "data-toggle" "collapse", onClick Collapse ]
+            [ span [ class (collapseGlyphicon collapsed), attribute "aria-hidden" "true" ] [] ]
         ]
     else
         [ span [ class "panel-title", onClick EditTitle ] [ text title ]
-        , button [ class "btn btn-default btn-sm", type_ "button", attribute "data-target" ("#collapse" ++ (toString collapseId)), attribute "data-toggle" "collapse", onClick Collapse ]
-            [ span [ class ("pull-right glyphicon " ++ (collapseGlyphicon collapsed)) ] [] ]
+        , button [ class "btn btn-secondary btn-sm", type_ "button", attribute "data-target" ("#collapse" ++ (toString collapseId)), attribute "data-toggle" "collapse", onClick Collapse ]
+            [ span [ class (collapseGlyphicon collapsed), attribute "aria-hidden" "true" ] [] ]
         ]
 
 
@@ -157,13 +157,13 @@ viewToolButtons field allFields =
 
         viewInsert =
             if (field.model.accessType == Reserved) then
-                span [ class "input-grp-btn" ] [ button [ class "btn btn-default btn-sm", type_ "button", onClick (InsertField field.model.startPos) ] [ span [ class "glyphicon glyphicon-plus" ] [] ] ]
+                span [ class "input-grp-btn" ] [ button [ class "btn btn-secondary btn-sm", type_ "button", onClick (InsertField field.model.startPos) ] [ span [ class "fa fa-plus", attribute "aria-hidden" "true" ] [] ] ]
             else
                 emptyHtml
 
         viewRemove =
             if (field.model.accessType /= Reserved) then
-                span [ class "input-grp-btn" ] [ button [ class "btn btn-default btn-sm", type_ "button", onClick (RemoveField field.model.startPos) ] [ span [ class "glyphicon glyphicon-trash" ] [] ] ]
+                span [ class "input-grp-btn" ] [ button [ class "btn btn-secondary btn-sm", type_ "button", onClick (RemoveField field.model.startPos) ] [ span [ class "fa fa-trash", attribute "aria-hidden" "true" ] [] ] ]
             else
                 emptyHtml
 
