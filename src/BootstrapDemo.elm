@@ -3,7 +3,6 @@ port module BootstrapDemo exposing (..)
 import Html exposing (Html, div, text, input, h2, h4, a)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Html.App
 import RegisterWidget
 
 
@@ -16,7 +15,7 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { register = fst <| RegisterWidget.init "Register" }, Cmd.none )
+    ( { register = Tuple.first <| RegisterWidget.init "Register" }, Cmd.none )
 
 
 
@@ -34,7 +33,7 @@ type Msg
 view : Model -> Html Msg
 view model =
     div []
-        [ Html.App.map RegisterWidgetMsg (RegisterWidget.view model.register)
+        [ Html.map RegisterWidgetMsg (RegisterWidget.view model.register)
         ]
 
 
@@ -46,7 +45,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         RegisterWidgetMsg msg ->
-            ( { model | register = fst <| RegisterWidget.update msg model.register }, Cmd.none )
+            ( { model | register = Tuple.first <| RegisterWidget.update msg model.register }, Cmd.none )
 
 
 
@@ -62,9 +61,9 @@ subscriptions model =
 -- MAIN
 
 
-main : Program Never
+main : Program Never Model Msg
 main =
-    Html.App.program
+    Html.program
         { init = init
         , view = view
         , update = update

@@ -4,7 +4,6 @@ import Array exposing (..)
 import Html exposing (Html, div, text, input, h2, h4, a, span, table, tbody, thead, th, td, tr, button, form)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Html.App
 import String exposing (toInt)
 
 
@@ -109,13 +108,13 @@ collapseGlyphicon collapsed =
 titleView : Bool -> Bool -> String -> Int -> List (Html Msg)
 titleView collapsed editable title collapseId =
     if editable == True then
-        [ input [ type' "text", onInput ChangeTitle, onClick ApplyTitle, defaultValue title ] []
-        , button [ class "btn btn-default btn-sm", type' "button", attribute "data-target" ("#collapse" ++ (toString collapseId)), attribute "data-toggle" "collapse", onClick Collapse ]
+        [ input [ type_ "text", onInput ChangeTitle, onClick ApplyTitle, defaultValue title ] []
+        , button [ class "btn btn-default btn-sm", type_ "button", attribute "data-target" ("#collapse" ++ (toString collapseId)), attribute "data-toggle" "collapse", onClick Collapse ]
             [ span [ class ("pull-right glyphicon " ++ (collapseGlyphicon collapsed)) ] [] ]
         ]
     else
         [ span [ class "panel-title", onClick EditTitle ] [ text title ]
-        , button [ class "btn btn-default btn-sm", type' "button", attribute "data-target" ("#collapse" ++ (toString collapseId)), attribute "data-toggle" "collapse", onClick Collapse ]
+        , button [ class "btn btn-default btn-sm", type_ "button", attribute "data-target" ("#collapse" ++ (toString collapseId)), attribute "data-toggle" "collapse", onClick Collapse ]
             [ span [ class ("pull-right glyphicon " ++ (collapseGlyphicon collapsed)) ] [] ]
         ]
 
@@ -143,19 +142,19 @@ viewToolButtons field allFields =
 
         viewInsert =
             if (field.model.accessType == Reserved) then
-                span [ class "input-grp-btn" ] [ button [ class "btn btn-default btn-sm", type' "button", onClick (InsertField field.model.startPos) ] [ span [ class "glyphicon glyphicon-plus" ] [] ] ]
+                span [ class "input-grp-btn" ] [ button [ class "btn btn-default btn-sm", type_ "button", onClick (InsertField field.model.startPos) ] [ span [ class "glyphicon glyphicon-plus" ] [] ] ]
             else
                 emptyHtml
 
         viewRemove =
             if (field.model.accessType /= Reserved) then
-                span [ class "input-grp-btn" ] [ button [ class "btn btn-default btn-sm", type' "button", onClick (RemoveField field.model.startPos) ] [ span [ class "glyphicon glyphicon-trash" ] [] ] ]
+                span [ class "input-grp-btn" ] [ button [ class "btn btn-default btn-sm", type_ "button", onClick (RemoveField field.model.startPos) ] [ span [ class "glyphicon glyphicon-trash" ] [] ] ]
             else
                 emptyHtml
 
         viewSizeSlider =
             if (field.model.accessType /= Reserved) then
-                input [ type' "range", style [ ( "width", "100px" ) ], class "form-control", onInput (EditSize field.model.startPos) ] []
+                input [ type_ "range", style [ ( "width", "100px" ) ], class "form-control", onInput (EditSize field.model.startPos) ] []
             else
                 emptyHtml
     in
@@ -223,13 +222,13 @@ setFieldSize indexedFields startPos newSize =
                 (\indexedField ->
                     if indexedField.model.startPos == startPos then
                         let
-                            model' =
+                            model_ =
                                 indexedField.model
 
-                            model'' =
-                                { model' | size = newSize }
+                            model__ =
+                                { model_ | size = newSize }
                         in
-                            { indexedField | model = model'' }
+                            { indexedField | model = model__ }
                     else
                         indexedField
                 )
@@ -312,10 +311,10 @@ fillGaps gaps fields =
     case List.head gaps of
         Just gap ->
             let
-                fields' =
+                fields_ =
                     insertField (RegisterField "(Reserved)" Reserved gap.startPos gap.size "") fields
             in
-                fillGaps (List.drop 1 gaps) fields'
+                fillGaps (List.drop 1 gaps) fields_
 
         Nothing ->
             fields
@@ -377,19 +376,19 @@ update msg model =
 
         RemoveField startPos ->
             let
-                fields' =
+                fields_ =
                     removeField startPos model.fields
 
-                fields'' =
-                    filterReserved fields'
+                fields__ =
+                    filterReserved fields_
 
-                fields''' =
-                    fillGaps (buildGaps 0 fields'' []) fields''
+                fields___ =
+                    fillGaps (buildGaps 0 fields__ []) fields__
 
-                fields'''' =
-                    List.sortWith startPosSomparison fields''' |> List.reverse
+                fields____ =
+                    List.sortWith startPosSomparison fields___ |> List.reverse
             in
-                ( { model | fields = fields'''' }, Cmd.none )
+                ( { model | fields = fields____ }, Cmd.none )
 
         EditSize startPos newSize ->
             ( { model | fields = setFieldSize model.fields startPos (String.toInt (Debug.log "" newSize) |> Result.withDefault 0) }, Cmd.none )
