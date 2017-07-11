@@ -4,6 +4,8 @@ import Html exposing (Html, div, text, input, h2, h4, a, span, table, tbody, the
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import String exposing (toInt)
+import Bootstrap.Button as Button
+import Bootstrap.ButtonGroup as ButtonGroup
 
 
 -- MODEL
@@ -157,13 +159,13 @@ viewToolButtons field allFields =
 
         viewInsert =
             if (field.model.accessType == Reserved) then
-                span [ class "input-grp-btn" ] [ button [ class "btn btn-secondary btn-sm", type_ "button", onClick (InsertField field.model.startPos) ] [ span [ class "fa fa-plus", attribute "aria-hidden" "true" ] [] ] ]
+                ButtonGroup.buttonGroup [ ButtonGroup.small ] [ ButtonGroup.button [ Button.secondary, Button.onClick (InsertField field.model.startPos) ] [ span [ class "fa fa-plus", attribute "aria-hidden" "true" ] [] ] ]
             else
                 emptyHtml
 
         viewRemove =
             if (field.model.accessType /= Reserved) then
-                span [ class "input-grp-btn" ] [ button [ class "btn btn-secondary btn-sm", type_ "button", onClick (RemoveField field.model.startPos) ] [ span [ class "fa fa-trash", attribute "aria-hidden" "true" ] [] ] ]
+                ButtonGroup.buttonGroup [ ButtonGroup.small ] [ ButtonGroup.button [ Button.secondary, Button.onClick (RemoveField field.model.startPos) ] [ span [ class "fa fa-trash", attribute "aria-hidden" "true" ] [] ] ]
             else
                 emptyHtml
 
